@@ -58,14 +58,14 @@ class FreeTDS : public node::ObjectWrap {
 
 	  static v8::Handle<v8::Value> getServer(Local<String> property,
 			  const AccessorInfo& info) {
-		  v8::HandleScope scope(node_isolate);
+		  v8::HandleScope scope;
 		  FreeTDS *freetds = FreeTDS::Unwrap(info);
 		  return scope.Close(v8::String::New(freetds->server));
 	  }
 
 	  static v8::Handle<v8::Value> getDatabase(Local<String> property,
               const AccessorInfo& info) {
-		  v8::HandleScope scope(node_isolate);
+		  v8::HandleScope scope;
 		  FreeTDS *freetds = FreeTDS::Unwrap(info);
 		  return scope.Close(v8::String::New(freetds->database));
 	  }

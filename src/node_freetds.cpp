@@ -70,7 +70,7 @@ void FreeTDS::Initialize(Handle<Object> target) {
 }
 
 Handle<Value> FreeTDS::New(const Arguments& args) {
-  HandleScope scope(node_isolate);
+  HandleScope scope;
   REQ_ARG(String, 0, server);
   REQ_ARG(String, 1, database);
 
@@ -96,7 +96,7 @@ Handle<Value> FreeTDS::Version(const Arguments& args) {
  * returns true if login was successful
  */
 Handle<Value> FreeTDS::Login(const Arguments& args) {
-  HandleScope scope(node_isolate);
+  HandleScope scope;
   FreeTDS *freetds = FreeTDS::Unwrap(args);
   LOGINREC *login;
 
@@ -121,9 +121,6 @@ Handle<Value> FreeTDS::Login(const Arguments& args) {
 
   DBSETLVERSION(login, DBVERSION_80);
 
-  printf("User: %s\n", *userId);
-  printf("Password: %s\n", *pw);
-
   // set the application name to node-freetds to help with profiling etc
   DBSETLAPP(login, "node-freetds");
 
@@ -146,30 +143,30 @@ Handle<Value> FreeTDS::Login(const Arguments& args) {
   dbloginfree(login);
 
   // wrap the dbconn so that we can persist it from the JS side
-  return True(node_isolate);
+  return v8::True();
 }
 
 // one arg - logout
 Handle<Value> FreeTDS::Logout(const Arguments& args) {
-  HandleScope scope(node_isolate);
+  HandleScope scope;
   FreeTDS *freetds = FreeTDS::Unwrap(args);
 
   dbfreebuf(freetds->dbconn);
   dbclose(freetds->dbconn);
 
-  return Undefined(node_isolate);
+  return v8::Undefined();
 }
 
 // TODO Logout and Cleanup should happen when the object is freed and probably should not be exposed to Javascript.
 // TODO Calling dbexit here will be really confusing to freetds if it is called out of order when there is more than one dbinit or instance of FreeTDS.
 Handle<Value> FreeTDS::Cleanup(const Arguments& args) {
-  HandleScope scope(node_isolate);
+  HandleScope scope;
   dbexit();
-  return Undefined(node_isolate);
+  return v8::Undefined();
 }
 
 void onDataResponse(uv_work_t *req, int stat) {
-  HandleScope scope(node_isolate);
+  HandleScope scope;
   FreeTDS::data_callback_t *callbackData = static_cast<FreeTDS::data_callback_t*>(req->data);
 
   if(callbackData->response == FAIL){
@@ -354,7 +351,7 @@ static void waitForDataResponse(uv_work_t *req) {
 
 // db, statement, callback
 Handle<Value> FreeTDS::ExecuteStatement(const Arguments& args) {
-  HandleScope scope(node_isolate);
+  HandleScope scope;
   FreeTDS *freetds = FreeTDS::Unwrap(args);
 
   REQ_ARG(String, 0, js_statement);
@@ -374,7 +371,7 @@ Handle<Value> FreeTDS::ExecuteStatement(const Arguments& args) {
   if(!asprintf(&callbackData->statement, "%s", *statement))
 	  return ERROR("Out of memory.");;
   if(js_callback->IsFunction())
-	  callbackData->callback = Persistent<Function>::New(node_isolate, js_callback);
+	  callbackData->callback = Persistent<Function>::New(js_callback);
 
   if(dbsqlsend(freetds->dbconn) == FAIL) {
 	delete callbackData;
@@ -385,7 +382,7 @@ Handle<Value> FreeTDS::ExecuteStatement(const Arguments& args) {
 
   uv_queue_work(uv_default_loop(), &callbackData->worker, waitForDataResponse,  onDataResponse);
 
-  return Undefined(node_isolate);
+  return v8::Undefined();
 }
 
 NODE_MODULE(node_freetds, FreeTDS::Initialize);
